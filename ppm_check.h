@@ -4,7 +4,7 @@
 #define STEGO_H_FILE
 
 // Check that the file is P6 format
-int read_magic_num(FILE *);
+int correct_magic_num(FILE *);
 
 // Skips past the comments in the file
 void ignore_comments(FILE *);

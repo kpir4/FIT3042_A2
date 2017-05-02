@@ -4,7 +4,7 @@
 
 
 // Returns 1 if P6, else returns 0
-int read_magic_num(FILE *fp) {
+int correct_magic_num(FILE *fp) {
 	char temp = fgetc(fp);
 	if (temp == 'P' && fgetc(fp) == '6') {
 		fgetc(fp);

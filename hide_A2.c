@@ -58,7 +58,7 @@ int get_total_cap(char ** files, int num_files) {
 
 	for (i = 0; i < num_files; i++) {
 		char *inf_name = files[3];
-		inf_name = get_file_name(inf_name, i);
+		inf_name = add_file_extension(inf_name, i);
 		FILE *inf = fopen(inf_name, 'r');
 
 		if (correct_magic_num(inf)) {
@@ -68,19 +68,19 @@ int get_total_cap(char ** files, int num_files) {
 		else {
 			return -1
 		}
+		fclose(inf);
 	}
-	fclose(inf);
 	return total_file_cap
 }
 
 // Appends the sequence number and .ppm extension to the end of the base file name
 char * add_file_extension(char *inf_name, int curr_file) {
 	if (curr_file < 10)
-		char *extension = "-00" + i + ".ppm";
+		char *extension = "-00" + curr_file + ".ppm";
 	else if (10 < curr_file < 100)
-		char *extension = "-0" + i + ".ppm";
+		char *extension = "-0" + curr_file + ".ppm";
 	else
-		char *extension = "-" + i + ".ppm";
+		char *extension = "-" + curr_file + ".ppm";
 	strcat(inf_name, extension);
 	return inf_name;
 }
@@ -174,7 +174,7 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
 		inf_name_copy = add_file_extension(inf_name_copy, curr_img);
 		FILE *inf = fopen(inf_name_copy, 'r');
 		// check the image has the correct maximum channel value
-		if (!read_magic_num(inf))
+		if (!correct_magic_num(inf))
 			return -1;
 		// ignore comments in the ppm image file
 		ignore_comments(inf);

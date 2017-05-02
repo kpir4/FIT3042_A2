@@ -11,7 +11,7 @@ int get_msg(char **message);
 void copy_header(FILE *inf, FILE *outf, int num_header_lines);
 int count_header_lines(FILE *inf);
 int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len);
-void hide_bit(FILE *inf, FILE *outf, char curr_char, int hide_bit);
+void hide_bit(FILE *inf, FILE *outf, char curr_char, int hide_bit, int msg_len, int bits_hidden);
 
 int main(int argc, char **argv) {
 	if (argc < 3) {
@@ -211,14 +211,15 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
 		copy_header(inf, outf, count_header_lines(inf));
 
 		// hide character
-		while (bits_hidden_in_file <= file_cap || bits_hidden <= msg_len * 8) {
+		while (bits_hidden_in_file <= file_cap) {
+			// the current character to hide
 			int curr_char_index = bits_hidden / 8;
 			curr_char = msg[curr_char_index];
 			for (i = 0; i < 8; i++){
-				hide_bit(inf, outf, curr_char, i); // hide current character bit in current image
+				hide_bit(inf, outf, curr_char, i, msg_len, bits_hidden); // hide current character bit in current image
+				bits_hidden++;			// total number of bits hidden
+				bits_hidden_in_file++;	// number of bits hidden in current image
 			}
-			bits_hidden++;			// total number of characters hidden
-			bits_hidden_in_file++;	// number of characters hidden in current image
 		}
 		fclose(inf);
 		fclose(outf);
@@ -231,27 +232,31 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
 
 
 // Hides a single character within a .ppm image
-void hide_bit(FILE *inf, FILE *outf, char curr_char, int hide_bit){
+void hide_bit(FILE *inf, FILE *outf, char curr_char, int hide_bit, int msg_len, int bits_hidden){
 	unsigned char colour_chan;
 	char curr_bit;
 
-	// current character of the message to hide
-	curr_bit = curr_char;
+	colour_chan = fgetc(inf);
 
-	// start with the LMB of the character
-	curr_bit >>= 7 - hide_bit;
+	if (bits_hidden < msg_len * 8){
+		// current character of the message to hide
+		curr_bit = curr_char;
 
-	// check if current character bit to be hidden is a 1
-	if ((curr_bit & 1) == 1) {
-		// change LSB of colour channel to 1 if it is 0
-		if ((colour_chan & 1) == 0) 
-			colour_chan++;
-	}
-	// if current character bit is 0
-	else {
-		// change LSB of colour channel to 0 if it is 1
-		if ((colour_chan & 1) == 1)
-			colour_chan--;
+		// start with the LMB of the character
+		curr_bit >>= 7 - hide_bit;
+
+		// check if current character bit to be hidden is a 1
+		if ((curr_bit & 1) == 1) {
+			// change LSB of colour channel to 1 if it is 0
+			if ((colour_chan & 1) == 0) 
+				colour_chan++;
+		}
+		// if current character bit is 0
+		else {
+			// change LSB of colour channel to 0 if it is 1
+			if ((colour_chan & 1) == 1)
+				colour_chan--;
+		}
 	}
 	// output changed channel value to output image
 	fputc(colour_chan, outf);

@@ -7,7 +7,7 @@
 int get_total_cap(char ** files, int num_files);
 char * add_file_extension(char *inf_name, int curr_file);
 int get_file_cap(FILE *inf);
-int get_msg(char *message);
+int get_msg(char **message);
 void copy_header(FILE *inf, FILE *outf, int num_header_lines);
 int count_header_lines(FILE *inf);
 int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len);
@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 	}
 	
 	char *msg;
-	int msg_len = get_msg(msg);
+	int msg_len = get_msg(&msg);
 
 	// checks for the '-m' flag for hiding message in multiple images
 	if (!strcmp(argv[1], "-m")) {
@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
 					printf("Error: Maximum channel value is not 255.\nTerminating...\n");
 					return 1;
 				}
+				free(msg);
 			}
 			else {
 				printf("Error: Message is too large to hide in input image.\nTerminating...\n");
@@ -60,11 +61,17 @@ int main(int argc, char **argv) {
 */
 int get_total_cap(char ** files, int num_files) {
 	int total_file_cap = 0, file_cap, i;
+	char *inf_name = (char*)malloc(strlen(files[3]) + 10);
+	strcpy(inf_name, files[3]);
 
 	for (i = 0; i < num_files; i++) {
-		char *inf_name = files[3];
-		inf_name = add_file_extension(inf_name, i);
+		strcpy(inf_name, add_file_extension(inf_name, i));
 		FILE *inf = fopen(inf_name, "r");
+		if (inf == NULL) {
+			printf("Error: Could not open file.\n");
+			printf("Terminating...\n");
+			return -2;
+		}
 
 		if (correct_magic_num(inf)) {
 			ignore_comments(inf);
@@ -74,15 +81,17 @@ int get_total_cap(char ** files, int num_files) {
 			return -1;
 		}
 		fclose(inf);
+		free(inf_name);
 	}
 	return total_file_cap;
 }
 
 // Appends the sequence number and .ppm extension to the end of the base file name
 char * add_file_extension(char *inf_name, int curr_file) {
-	char *file_num;
+	char *inf_name_cpy = inf_name;
+	char file_num[4];
 	sprintf(file_num, "%d", curr_file);
-	char *extension = "";
+	char extension[9];
 	if (curr_file < 10)
 		strcat(extension, "-00");
 	else if (10 < curr_file < 100)
@@ -92,7 +101,8 @@ char * add_file_extension(char *inf_name, int curr_file) {
 	strcat(extension, file_num);
 	strcat(extension, ".ppm");
 	strcat(inf_name, extension);
-	return inf_name;
+	printf("%s", inf_name);
+	return inf_name_cpy;
 }
 
 // Returns the number of characters that can be hidden within the file
@@ -106,9 +116,9 @@ int get_file_cap(FILE *inf) {
 /* Returns the message length and updates the pass in message variable.
 ** Uses input redirection if avaiable or prompts user for message if not.
 */
-int get_msg(char *message) {
+int get_msg(char **message) {
 	int max = 20;
-	message = (char*)malloc(max);
+	*message = (char*)malloc(max);
 
 	// checks for input redirection for message, if none, asks user for message
 	if (!feof(stdin))
@@ -118,14 +128,14 @@ int get_msg(char *message) {
 	while (1) {
 		int c = getchar();
 		if (c == '\n' || c == EOF) {
-			message[msg_len] = 0;
+			(*message)[msg_len] = 0;
 			return msg_len;
 		}
-		message[msg_len] = c;
+		(*message)[msg_len] = c;
 		// allocate more memory if user input is longer than max
 		if (msg_len == max - 1) {
 			max += max;
-			message = (char*)realloc(message, max);
+			*message = (char*)realloc(message, max);
 		}
 		msg_len++;
 	}
@@ -181,8 +191,9 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
 	do {
 		int bits_hidden_in_file = 0;
 		// get the current image that will hide the current portion of the message
-		char *inf_name_copy = inf_name;
-		inf_name_copy = add_file_extension(inf_name_copy, curr_img);
+		char *inf_name_copy = (char*)malloc(strlen(inf_name) + 10);
+		strcpy(inf_name_copy, inf_name);
+		strcpy(inf_name_copy, add_file_extension(inf_name_copy, curr_img));
 		FILE *inf = fopen(inf_name_copy, "r");
 		// check the image has the correct maximum channel value
 		if (!correct_magic_num(inf))
@@ -192,15 +203,17 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
 		// find how many characters can be stored in the current image
 		unsigned int file_cap = get_file_cap(inf);
 		// create the corresponding image which will have the message hidden within
-		char *outf_name_copy = outf_name;
-		outf_name_copy = add_file_extension(outf_name_copy, curr_img);
+		char *outf_name_copy = (char*)malloc(strlen(outf_name) + 10);
+		strcpy(outf_name_copy, outf_name);
+		strcpy(outf_name_copy, add_file_extension(outf_name_copy, curr_img));
 		FILE *outf = fopen(outf_name_copy, "w");
 		// copy image header to the output image
 		copy_header(inf, outf, count_header_lines(inf));
 
 		// hide character
 		while (bits_hidden_in_file <= file_cap || bits_hidden <= msg_len * 8) {
-			curr_char = msg[bits_hidden / 8];
+			int curr_char_index = bits_hidden / 8;
+			curr_char = msg[curr_char_index];
 			for (i = 0; i < 8; i++){
 				hide_bit(inf, outf, curr_char, i); // hide current character bit in current image
 			}
@@ -209,6 +222,8 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
 		}
 		fclose(inf);
 		fclose(outf);
+		free(inf_name_copy);
+		free(outf_name_copy);
 		curr_img++;
 	} while (bits_hidden <= msg_len * 8);
 	return 0;

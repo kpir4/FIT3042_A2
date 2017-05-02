@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 	}
 
 	// check that the file is P6 format
-	if (read_magic_num(inf)) {
+	if (correct_magic_num(inf)) {
 		// Bypass any comments
 		ignore_comments(inf);
 		int width = get_width(inf);

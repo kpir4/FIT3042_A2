@@ -1,12 +1,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "ppm_check.h"
 
+int get_total_cap(char ** files, int num_files);
+char * add_file_extension(char *inf_name, int curr_file);
+int get_file_cap(FILE *inf);
+int get_msg(char *message);
 void copy_header(FILE *inf, FILE *outf, int num_header_lines);
-int check_msg_size(int msg_len, int width, int height);
 int count_header_lines(FILE *inf);
-void hide_msg(FILE *inf, FILE *outf, int msg_len, char *message, int width, int height);
+int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len);
+void hide_bit(FILE *inf, FILE *outf, char curr_char, int hide_bit);
 
 int main(int argc, char **argv) {
 	if (argc < 3) {
@@ -59,38 +64,43 @@ int get_total_cap(char ** files, int num_files) {
 	for (i = 0; i < num_files; i++) {
 		char *inf_name = files[3];
 		inf_name = add_file_extension(inf_name, i);
-		FILE *inf = fopen(inf_name, 'r');
+		FILE *inf = fopen(inf_name, "r");
 
 		if (correct_magic_num(inf)) {
 			ignore_comments(inf);
-			total_file_cap += get_file_cap(i);				
+			total_file_cap += get_file_cap(inf);				
 		}
 		else {
-			return -1
+			return -1;
 		}
 		fclose(inf);
 	}
-	return total_file_cap
+	return total_file_cap;
 }
 
 // Appends the sequence number and .ppm extension to the end of the base file name
 char * add_file_extension(char *inf_name, int curr_file) {
+	char *file_num;
+	sprintf(file_num, "%d", curr_file);
+	char *extension = "";
 	if (curr_file < 10)
-		char *extension = "-00" + curr_file + ".ppm";
+		strcat(extension, "-00");
 	else if (10 < curr_file < 100)
-		char *extension = "-0" + curr_file + ".ppm";
+		strcat(extension, "-0");
 	else
-		char *extension = "-" + curr_file + ".ppm";
+		strcat(extension, "-");
+	strcat(extension, file_num);
+	strcat(extension, ".ppm");
 	strcat(inf_name, extension);
 	return inf_name;
 }
 
 // Returns the number of characters that can be hidden within the file
 int get_file_cap(FILE *inf) {
-	width = get_width(inf);
-	height = get_height(inf);
+	int width = get_width(inf);
+	int height = get_height(inf);
 	// multiplied by 3 for the 3 channels
-	return width * height * 3
+	return width * height * 3;
 }
 
 /* Returns the message length and updates the pass in message variable.
@@ -98,7 +108,7 @@ int get_file_cap(FILE *inf) {
 */
 int get_msg(char *message) {
 	int max = 20;
-	char *message = (char*)malloc(max);
+	message = (char*)malloc(max);
 
 	// checks for input redirection for message, if none, asks user for message
 	if (!feof(stdin))
@@ -166,13 +176,14 @@ int count_header_lines(FILE *inf) {
 ** if an error occurs.
 */
 int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
-	int i, curr_img = 0, char_hidden = 0;
+	int i, curr_img = 0, bits_hidden = 0;
+	char curr_char;
 	do {
-		int char_hidden_in_file = 0;
+		int bits_hidden_in_file = 0;
 		// get the current image that will hide the current portion of the message
 		char *inf_name_copy = inf_name;
 		inf_name_copy = add_file_extension(inf_name_copy, curr_img);
-		FILE *inf = fopen(inf_name_copy, 'r');
+		FILE *inf = fopen(inf_name_copy, "r");
 		// check the image has the correct maximum channel value
 		if (!correct_magic_num(inf))
 			return -1;
@@ -181,52 +192,52 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
 		// find how many characters can be stored in the current image
 		unsigned int file_cap = get_file_cap(inf);
 		// create the corresponding image which will have the message hidden within
+		char *outf_name_copy = outf_name;
 		outf_name_copy = add_file_extension(outf_name_copy, curr_img);
-		FILE *outf = fopen(outf_name_copy, 'w');
+		FILE *outf = fopen(outf_name_copy, "w");
 		// copy image header to the output image
 		copy_header(inf, outf, count_header_lines(inf));
 
 		// hide character
-		while (char_hidden_in_file <= file_cap && char_hidden_in_file <= msg_len) {
-			// hide current character in current image
-			hide_char(inf, outf, msg[char_hidden]);
-			char_hidden++;			// total number of characters hidden
-			char_hidden_in_file++;	// number of characters hidden in current image
+		while (bits_hidden_in_file <= file_cap || bits_hidden <= msg_len * 8) {
+			curr_char = msg[bits_hidden / 8];
+			for (i = 0; i < 8; i++){
+				hide_bit(inf, outf, curr_char, i); // hide current character bit in current image
+			}
+			bits_hidden++;			// total number of characters hidden
+			bits_hidden_in_file++;	// number of characters hidden in current image
 		}
 		fclose(inf);
 		fclose(outf);
 		curr_img++;
-	} while (char_hidden <= msg_len);
+	} while (bits_hidden <= msg_len * 8);
 	return 0;
 }
 
 
 // Hides a single character within a .ppm image
-void hide_char(FILE *inf, FILE *outf, char curr_char){
+void hide_bit(FILE *inf, FILE *outf, char curr_char, int hide_bit){
 	unsigned char colour_chan;
 	char curr_bit;
-	int i;
 
-	for (i = 0; i < 8; i++) {
-		// current character of the message to hide
-		curr_bit = curr_char;
+	// current character of the message to hide
+	curr_bit = curr_char;
 
-		// start with the LMB of the character
-		curr_bit >>= 7 - i;
+	// start with the LMB of the character
+	curr_bit >>= 7 - hide_bit;
 
-		// check if current character bit to be hidden is a 1
-		if ((curr_bit & 1) == 1) {
-			// change LSB of colour channel to 1 if it is 0
-			if ((colour_chan & 1) == 0) 
-				colour_chan++;
-		}
-		// if current character bit is 0
-		else {
-			// change LSB of colour channel to 0 if it is 1
-			if ((colour_chan & 1) == 1)
-				colour_chan--;
-		}
-
-		fputc(colour_chan, outf);
+	// check if current character bit to be hidden is a 1
+	if ((curr_bit & 1) == 1) {
+		// change LSB of colour channel to 1 if it is 0
+		if ((colour_chan & 1) == 0) 
+			colour_chan++;
 	}
+	// if current character bit is 0
+	else {
+		// change LSB of colour channel to 0 if it is 1
+		if ((colour_chan & 1) == 1)
+			colour_chan--;
+	}
+	// output changed channel value to output image
+	fputc(colour_chan, outf);
 }

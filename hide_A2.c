@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
 #include "ppm_check.h"
 
 int get_total_cap(char ** files, int num_files);
@@ -11,7 +10,7 @@ int get_msg(char **message);
 void copy_header(FILE *inf, FILE *outf, int num_header_lines);
 int count_header_lines(FILE *inf);
 int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_files);
-void hide_bit(FILE *inf, FILE *outf, char curr_char, int bit_shift, int msg_len, int bits_iter);
+void hide_bit(FILE *inf, FILE *outf, char *msg, int bit_shift, int msg_len, int bits_iter);
 
 int main(int argc, char **argv) {
 	if (argc < 3) {
@@ -120,7 +119,7 @@ int get_msg(char **message) {
 	*message = (char*)malloc(max);
 
 	// checks for input redirection for message, if none, asks user for message
-	if (!feof(stdin))
+	if (feof(stdin))
 		printf("Enter your message: ");
 
 	int msg_len = 0;
@@ -134,7 +133,7 @@ int get_msg(char **message) {
 		// allocate more memory if user input is longer than max
 		if (msg_len == max - 1) {
 			max += max;
-			*message = (char*)realloc(message, max);
+			*message = (char*)realloc(*message, max);
 		}
 		msg_len++;
 	}
@@ -188,7 +187,6 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 	int i, curr_img = 0, bits_iter = 0;
 	char curr_char;
 	do {
-		i = 0;
 		// get the current image that will hide the current portion of the message
 		char *inf_name_copy = (char*)malloc(strlen(inf_name) + 10);
 		strcpy(inf_name_copy, inf_name);
@@ -211,9 +209,8 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 
 		// hide character
 		while (i < file_cap) {
-			// the current character to hide
-			
-			hide_bit(inf, outf, curr_char, bits_iter % 8, msg_len, bits_iter); // hide current character bit in current image
+			// the current character to hide		
+			hide_bit(inf, outf, msg, bits_iter % 8, msg_len, bits_iter); // hide current character bit in current image
 			bits_iter++;			// total number of bits hidden
 			i++;
 		}
@@ -228,18 +225,16 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 
 
 // Hides a single character within a .ppm image
-void hide_bit(FILE *inf, FILE *outf, char curr_char, int bit_shift, int msg_len, int bits_iter){
+void hide_bit(FILE *inf, FILE *outf, char *msg, int bit_shift, int msg_len, int bits_iter){
 	unsigned char colour_chan;
 	char curr_bit;
 
 	colour_chan = fgetc(inf);
 
-	if (bits_iter / 8 < msg_len){
-		int curr_char_index = bits_iter / 8;
-		curr_char = msg[curr_char_index];
-	}
+	int curr_char_index = bits_iter / 8;
+	if (curr_char_index < msg_len){
+		char curr_char = msg[curr_char_index];
 
-	if (bits_iter < msg_len * 8){
 		// current character of the message to hide
 		curr_bit = curr_char;
 

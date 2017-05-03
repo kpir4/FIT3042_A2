@@ -18,4 +18,6 @@ int get_height(FILE *);
 // Returns 1 if 255, else returns 0
 int check_colour_channel(FILE *);
 
+char * add_file_extension(char *inf_name, int curr_file);
+
 #endif

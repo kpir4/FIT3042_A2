@@ -1,5 +1,6 @@
 #include <stdio.h> 
 #include <stdlib.h>
+#include <string.h>
 #include "ppm_check.h"
 
 
@@ -51,4 +52,22 @@ int check_colour_channel(FILE *fp) {
 		return 1;
 	}
 	return 0;
+}
+
+// Appends the sequence number and .ppm extension to the end of the base file name
+char * add_file_extension(char *inf_name, int curr_file) {
+	char *inf_name_cpy = inf_name;
+	char file_num[4];
+	sprintf(file_num, "%d", curr_file);
+	char extension[9];
+	if (curr_file < 10)
+		strcat(extension, "-00");
+	else if (10 < curr_file < 100)
+		strcat(extension, "-0");
+	else
+		strcat(extension, "-");
+	strcat(extension, file_num);
+	strcat(extension, ".ppm");
+	strcat(inf_name, extension);
+	return inf_name_cpy;
 }

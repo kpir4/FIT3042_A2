@@ -208,11 +208,10 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 		copy_header(inf, outf, count_header_lines(inf));
 
 		// hide character
-		while (i < file_cap) {
+		for (i = 0; i < file_cap; i++) {
 			// the current character to hide		
 			hide_bit(inf, outf, msg, bits_iter % 8, msg_len, bits_iter); // hide current character bit in current image
 			bits_iter++;			// total number of bits hidden
-			i++;
 		}
 		fclose(inf);
 		fclose(outf);
@@ -232,7 +231,7 @@ void hide_bit(FILE *inf, FILE *outf, char *msg, int bit_shift, int msg_len, int 
 	colour_chan = fgetc(inf);
 
 	int curr_char_index = bits_iter / 8;
-	if (curr_char_index < msg_len){
+	if (curr_char_index <= msg_len){
 		char curr_char = msg[curr_char_index];
 
 		// current character of the message to hide

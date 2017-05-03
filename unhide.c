@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	FILE *inf = fopen(argv[1], "rb");
+	FILE *inf = fopen(argv[1], "r");
 	if (inf == NULL) {
 		printf("Error: Could not open file.\n");
 		printf("Terminating...\n");

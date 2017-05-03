@@ -10,8 +10,8 @@ int get_file_cap(FILE *inf);
 int get_msg(char **message);
 void copy_header(FILE *inf, FILE *outf, int num_header_lines);
 int count_header_lines(FILE *inf);
-int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len);
-void hide_bit(FILE *inf, FILE *outf, char curr_char, int hide_bit, int msg_len, int bits_hidden);
+int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_files);
+void hide_bit(FILE *inf, FILE *outf, char curr_char, int bit_shift, int msg_len, int bits_iter);
 
 int main(int argc, char **argv) {
 	if (argc < 3) {
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 			// if the message fits
 			}else if (msg_len <= total_image_cap) {
 				// hides the message with the images
-				if (!hide_msg(argv[3], argv[4], msg, msg_len)) {
+				if (hide_msg(argv[3], argv[4], msg, msg_len, num_files)) {
 					printf("Error: Maximum channel value is not 255.\nTerminating...\n");
 					return 1;
 				}
@@ -61,10 +61,10 @@ int main(int argc, char **argv) {
 */
 int get_total_cap(char ** files, int num_files) {
 	int total_file_cap = 0, file_cap, i;
-	char *inf_name = (char*)malloc(strlen(files[3]) + 10);
-	strcpy(inf_name, files[3]);
 
 	for (i = 0; i < num_files; i++) {
+		char *inf_name = (char*)malloc(strlen(files[3]) + 10);
+		strcpy(inf_name, files[3]);
 		strcpy(inf_name, add_file_extension(inf_name, i));
 		FILE *inf = fopen(inf_name, "r");
 		if (inf == NULL) {
@@ -101,7 +101,6 @@ char * add_file_extension(char *inf_name, int curr_file) {
 	strcat(extension, file_num);
 	strcat(extension, ".ppm");
 	strcat(inf_name, extension);
-	printf("%s", inf_name);
 	return inf_name_cpy;
 }
 
@@ -185,11 +184,11 @@ int count_header_lines(FILE *inf) {
 /* Hide the message in the images. Returns 0 is message is successfully hidden or -1
 ** if an error occurs.
 */
-int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
-	int i, curr_img = 0, bits_hidden = 0;
+int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_files) {
+	int i, curr_img = 0, bits_iter = 0;
 	char curr_char;
 	do {
-		int bits_hidden_in_file = 0;
+		i = 0;
 		// get the current image that will hide the current portion of the message
 		char *inf_name_copy = (char*)malloc(strlen(inf_name) + 10);
 		strcpy(inf_name_copy, inf_name);
@@ -211,39 +210,41 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len) {
 		copy_header(inf, outf, count_header_lines(inf));
 
 		// hide character
-		while (bits_hidden_in_file <= file_cap) {
+		while (i < file_cap) {
 			// the current character to hide
-			int curr_char_index = bits_hidden / 8;
-			curr_char = msg[curr_char_index];
-			for (i = 0; i < 8; i++){
-				hide_bit(inf, outf, curr_char, i, msg_len, bits_hidden); // hide current character bit in current image
-				bits_hidden++;			// total number of bits hidden
-				bits_hidden_in_file++;	// number of bits hidden in current image
-			}
+			
+			hide_bit(inf, outf, curr_char, bits_iter % 8, msg_len, bits_iter); // hide current character bit in current image
+			bits_iter++;			// total number of bits hidden
+			i++;
 		}
 		fclose(inf);
 		fclose(outf);
 		free(inf_name_copy);
 		free(outf_name_copy);
 		curr_img++;
-	} while (bits_hidden <= msg_len * 8);
+	} while (curr_img < num_files);
 	return 0;
 }
 
 
 // Hides a single character within a .ppm image
-void hide_bit(FILE *inf, FILE *outf, char curr_char, int hide_bit, int msg_len, int bits_hidden){
+void hide_bit(FILE *inf, FILE *outf, char curr_char, int bit_shift, int msg_len, int bits_iter){
 	unsigned char colour_chan;
 	char curr_bit;
 
 	colour_chan = fgetc(inf);
 
-	if (bits_hidden < msg_len * 8){
+	if (bits_iter / 8 < msg_len){
+		int curr_char_index = bits_iter / 8;
+		curr_char = msg[curr_char_index];
+	}
+
+	if (bits_iter < msg_len * 8){
 		// current character of the message to hide
 		curr_bit = curr_char;
 
 		// start with the LMB of the character
-		curr_bit >>= 7 - hide_bit;
+		curr_bit >>= 7 - bit_shift;
 
 		// check if current character bit to be hidden is a 1
 		if ((curr_bit & 1) == 1) {

@@ -206,7 +206,7 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 		FILE *outf = fopen(outf_name_copy, "w");
 		// copy image header to the output image
 		copy_header(inf, outf, count_header_lines(inf));
-
+		if (curr_img == 0) encode_length(inf, outf, msg_len);
 		// hide character
 		for (i = 0; i < file_cap; i++) {
 			// the current character to hide		
@@ -220,6 +220,24 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 		curr_img++;
 	} while (curr_img < num_files);
 	return 0;
+}
+
+
+void encode_length(FILE *in, FILE *out, int length) {
+	char temp;
+	int i, l;
+	for (i = 0; i < 8; i++) {
+		temp = fgetc(in);
+		l = length;
+		l >>= 7 - i;
+		if ((l & 1) == 1)
+			if ((temp & 1) == 0) temp++;
+		else 
+			if ((temp & 1) == 1) temp--;
+		fputc(temp, out);
+	}
+
+	return;
 }
 
 

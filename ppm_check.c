@@ -55,7 +55,7 @@ int check_colour_channel(FILE *fp) {
 }
 
 // Appends the sequence number and .ppm extension to the end of the base file name
-char * add_file_extension(char *inf_name, int curr_file) {
+char *add_file_extension(char *inf_name, int curr_file) {
 	char *inf_name_cpy = inf_name;
 	char file_num[4];
 	sprintf(file_num, "%d", curr_file);
@@ -70,4 +70,25 @@ char * add_file_extension(char *inf_name, int curr_file) {
 	strcat(extension, ".ppm");
 	strcat(inf_name, extension);
 	return inf_name_cpy;
+}
+
+FILE *open_file(char *filename, int curr_img){
+	char *inf_name_copy = (char*)malloc(strlen(filename) + 10);
+	strcpy(inf_name_copy, filename);
+	strcpy(inf_name_copy, add_file_extension(inf_name_copy, curr_img));
+	FILE *inf = fopen(inf_name_copy, "r");
+	// check the image has the correct maximum channel value
+	if (!correct_magic_num(inf))
+		exit(-1);
+	// ignore comments in the ppm image file
+	ignore_comments(inf);
+	return inf;
+}
+
+// Returns the number of characters that can be hidden within the file
+int get_file_cap(FILE *inf) {
+	int width = get_width(inf);
+	int height = get_height(inf);
+	// multiplied by 3 for the 3 channels
+	return width * height * 3;
 }

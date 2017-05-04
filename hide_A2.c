@@ -86,14 +86,6 @@ int get_total_cap(char ** files, int num_files) {
 	return total_file_cap;
 }
 
-// Returns the number of characters that can be hidden within the file
-int get_file_cap(FILE *inf) {
-	int width = get_width(inf);
-	int height = get_height(inf);
-	// multiplied by 3 for the 3 channels
-	return width * height * 3;
-}
-
 /* Returns the message length and updates the pass in message variable.
 ** Uses input redirection if avaiable or prompts user for message if not.
 */

@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 				printf("Error: Image format must be P6.\nTerminating...\n");
 				return 1;
 			// if the message fits
-			}else if (msg_len <= total_image_cap) {
+			}else if (msg_len * 8 <= total_image_cap) {
 				// hides the message with the images
 				if (hide_msg(argv[3], argv[4], msg, msg_len, num_files)) {
 					printf("Error: Maximum channel value is not 255.\nTerminating...\n");
@@ -100,7 +100,7 @@ int get_msg(char **message) {
 	int msg_len = 0;
 	while (1) {
 		int c = getchar();
-		if (c == '\n' || c == EOF) {
+		if (c == EOF) {
 			(*message)[msg_len] = 0;
 			return msg_len;
 		}
@@ -181,9 +181,12 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 		FILE *outf = fopen(outf_name_copy, "w");
 		// copy image header to the output image
 		copy_header(inf, outf, count_header_lines(inf));
-		if (curr_img == 0) encode_length(inf, outf, msg_len);
+		if (curr_img == 0){
+			encode_length(inf, outf, msg_len);
+			i = 8;
+		} else i = 0;
 		// hide character
-		for (i = 0; i < file_cap; i++) {
+		for (i; i < file_cap; i++) {
 			// the current character to hide		
 			hide_bit(inf, outf, msg, bits_iter % 8, msg_len, bits_iter); // hide current character bit in current image
 			bits_iter++;			// total number of bits hidden
@@ -205,10 +208,12 @@ void encode_length(FILE *in, FILE *out, int length) {
 		temp = fgetc(in);
 		l = length;
 		l >>= 7 - i;
-		if ((l & 1) == 1)
+		if ((l & 1) == 1){
 			if ((temp & 1) == 0) temp++;
-		else 
+		}
+		else {
 			if ((temp & 1) == 1) temp--;
+		}
 		fputc(temp, out);
 	}
 

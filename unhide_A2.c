@@ -3,7 +3,7 @@
 #include <string.h>
 #include "ppm_check.h"
 
-void unhide_char(FILE *inf, unsigned char unhidden_char);
+void unhide_char(FILE *inf, unsigned char (*unhidden_char));
 int get_msg_len(FILE* inf);
 void unhide_msg(char *filename);
 
@@ -21,29 +21,32 @@ int main(int argc, char **argv) {
 
 
 void unhide_msg(char *filename) {
-	int curr_img = 0, i, j;
-	char unhidden_char = 0;
+	int curr_img = 0, curr_char_idx, i, j;
+	unsigned char unhidden_char = 0;
 
 	FILE *inf = open_file(filename, curr_img);
 	unsigned int file_cap = get_file_cap(inf);
+	check_colour_channel(inf);
 	int msg_len = get_msg_len(inf);
-	char *hidden_msg = (char*)malloc(msg_len);
-	for (i = 8; i < msg_len * 8; i++) {
+	char *hidden_msg = (char*)malloc(msg_len + 1);
+	for (i = 8; i <= (msg_len * 8 + 8); i++) {
 		if (i % 8 == 0) {
-			hidden_msg[i % 8] = unhidden_char;
+			curr_char_idx = (i - 8) / 8;
+			hidden_msg[curr_char_idx] = unhidden_char;
 			unhidden_char = 0;
 		}
-		unhide_char(inf, unhidden_char);
 		if (i >= file_cap) {
 			curr_img++;
 			if (i != 0) fclose(inf);
 			// get the current image that will hide the current portion of the message
 			inf = open_file(filename, curr_img);
 			// find how many characters can be stored in the current image
-			file_cap = get_file_cap(inf);
+			file_cap += get_file_cap(inf);
+			check_colour_channel(inf);
 		}
+		unhide_char(inf, &unhidden_char);
 	}
-	for (j = 1; j < msg_len; j++) {
+	for (j = 1; j <= msg_len; j++) {
 		printf("%c", hidden_msg[j]);
 	}
 	printf("\n");
@@ -61,19 +64,18 @@ int get_msg_len(FILE* inf) {
 		if (i > 0) length <<= 1;
 		length |= (temp & 1);
 	}
-	fclose(inf);
 	return length;
 }
 
 
 // reveals the hidden message
-void unhide_char(FILE *inf, unsigned char unhidden_char) {
+void unhide_char(FILE *inf, unsigned char (*unhidden_char)) {
 	int curr_chan;
 
 	// get colour channel value
 	curr_chan = fgetc(inf);
 	// shift bit to find the next binary value of the character in the message
-	unhidden_char <<= 1;
+	(*unhidden_char) <<= 1;
 	// current bit in character is changed to the colour channel's LSB
-	unhidden_char |= (curr_chan & 1);
+	(*unhidden_char) |= (curr_chan & 1);
 }

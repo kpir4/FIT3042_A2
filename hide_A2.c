@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "hide_A2.h"
 #include "ppm_check.h"
 #include "preview_img.h"
@@ -42,6 +45,9 @@ int main(int argc, char **argv) {
 			hide_msg(argv[2], argv[3], msg, msg_len, -1);
 			preview_img(argv[2]);
 			preview_img(argv[3]);
+		}
+		else if (!strcmp(argv[1], "-p")) {
+			hide_fork(argv[2]);
 		}
 		else {
 			printf("Error: The message can only be hidden in a maximum of 255 images.\nTerminating...\n");
@@ -160,22 +166,11 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 	char curr_char;
 	do {
 		// get the current image that will hide the current portion of the message
-		char *inf_name_copy = (char*)malloc(strlen(inf_name) + 10);
-		strcpy(inf_name_copy, inf_name);
-		strcpy(inf_name_copy, add_file_extension(inf_name_copy, curr_img));
-		FILE *inf = fopen(inf_name_copy, "r");
-		// check the image has the correct maximum channel value
-		if (!correct_magic_num(inf))
-			return -1;
-		// ignore comments in the ppm image file
-		ignore_comments(inf);
+		FILE *inf = open_file(inf_name, curr_img);
 		// find how many characters can be stored in the current image
 		unsigned int file_cap = get_file_cap(inf);
 		// create the corresponding image which will have the message hidden within
-		char *outf_name_copy = (char*)malloc(strlen(outf_name) + 10);
-		strcpy(outf_name_copy, outf_name);
-		strcpy(outf_name_copy, add_file_extension(outf_name_copy, curr_img));
-		FILE *outf = fopen(outf_name_copy, "w");
+		FILE *outf = open_file(outf_name, curr_img);
 		// copy image header to the output image
 		copy_header(inf, outf, count_header_lines(inf));
 		if (curr_img == 0){
@@ -250,4 +245,94 @@ void hide_bit(FILE *inf, FILE *outf, char *msg, int bit_shift, int msg_len, int 
 	}
 	// output changed channel value to output image
 	fputc(colour_chan, outf);
+}
+
+
+void hide_fork(char *file) {
+	FILE *inf = fopen(file, "r");
+	char *msg_file, *inf, *outf;
+	pid_t pid;
+	
+	while (more_to_hide) {
+		get_parametres(inf, &msg_file, &inf_img, &outf_img);
+		pid = fork();
+		if (pid < 0) {
+			printf("Error: Failed to create child process.\nTerminating...\n");
+		}
+		else if (!pid) {
+			char *msg;
+			strcpy(msg, get_msg_from_file(msg_file));
+			hide_msg(inf_img, outf_img, msg, strlen(msg) - 1, -1);
+			// stop child process from creating another child process
+			break;
+		}
+		more_to_hide = check_for_more(inf);
+	}
+	wait(NULL);
+	fclose(inf);
+	free(msg);
+}
+
+
+void get_parametres(FILE *inf, char **msg_file, char **inf_img, char **outf_img) {
+	char temp;
+	int i = 0, str_len = 0;
+	int max = 20;
+	char *temp_str = (char*)malloc(max);
+
+	while ((temp = fgetc(inf)) != "\n") {
+		temp_str[str_len] = temp;
+		if (temp == " " && i == 0) {
+			temp_str[str_len] = 0
+			strcpy(*msg_file, msg_file_copy);
+		}
+		else if (temp == " " && i == 1) {
+			temp_str[str_len] = 0
+			strcpy(*inf_img, inf_img_cpy);
+		}
+		else {
+			temp_str[str_len] = 0
+			strcopy(*outf_img, outf_img_cpy);
+		}
+		if (str_len == max - 1) {
+			max += max;
+			temp_str = (char*)realloc(temp_str, max);
+		}
+		str_len++;
+	}
+}
+
+
+char *get_msg_from_file(char *msg_file) {
+	FILE *inf = fopen(msg_file, "r");
+	int max = 20;
+	char *message = (char*)malloc(max);
+
+	int msg_len = 0;
+	while (1) {
+		int c = fgetc(inf);
+		if (c == EOF) {
+			message[msg_len] = 0;
+			return msg_len;
+		}
+		message[msg_len] = c;
+		// allocate more memory if user input is longer than max
+		if (msg_len == max - 1) {
+			max += max;
+			message = (char*)realloc(message, max);
+		}
+		msg_len++;
+	}
+	return message;
+}
+
+
+int more_to_hide(FILE *inf) {
+	char temp = fgetc(inf);
+	if (temp == EOF)
+		return 0;
+	else {
+		ungetc(temp, inf);
+		return 1;
+	}
 }

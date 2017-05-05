@@ -1,17 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "hide_A2.h"
 #include "ppm_check.h"
-
-int get_total_cap(char ** files, int num_files);
-char * add_file_extension(char *inf_name, int curr_file);
-int get_file_cap(FILE *inf);
-int get_msg(char **message);
-void copy_header(FILE *inf, FILE *outf, int num_header_lines);
-int count_header_lines(FILE *inf);
-int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_files);
-void hide_bit(FILE *inf, FILE *outf, char *msg, int bit_shift, int msg_len, int bits_iter);
-void encode_length(FILE *in, FILE *out, int length);
+#include "preview_img.h"
 
 int main(int argc, char **argv) {
 	if (argc < 3) {
@@ -45,6 +37,11 @@ int main(int argc, char **argv) {
 				printf("Error: Message is too large to hide in input image.\nTerminating...\n");
 				return 1;
 			}
+		}
+		else if (!strcmp(argv[1], "-s")) {
+			hide_msg(argv[2], argv[3], msg, msg_len, -1);
+			preview_img(argv[2]);
+			preview_img(argv[3]);
 		}
 		else {
 			printf("Error: The message can only be hidden in a maximum of 255 images.\nTerminating...\n");

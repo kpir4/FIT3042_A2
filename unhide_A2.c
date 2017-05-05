@@ -1,11 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "unhide.h"
 #include "ppm_check.h"
-
-void unhide_char(FILE *inf, unsigned char (*unhidden_char));
-int get_msg_len(FILE* inf);
-void unhide_msg(char *filename);
 
 int main(int argc, char **argv) {
 	if (argc < 3) {
@@ -14,14 +11,18 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	unhide_msg(argv[2]);
+	if (!strcmp(argv[1], "-m")) {
+		unhide_msg(argv[2]);
+	}
+	else
+		unhide_msg(argv[2], -1);
 
 	return 0;
 }
 
 
-void unhide_msg(char *filename) {
-	int curr_img = 0, curr_char_idx, i, j;
+void unhide_msg(char *filename, int file_flag = 0) {
+	int curr_img = file_flag, curr_char_idx, i, j;
 	unsigned char unhidden_char = 0;
 
 	FILE *inf = open_file(filename, curr_img);

@@ -1,7 +1,7 @@
-#ifndef STEGO_H_FILE
+#ifndef PPM_CHECK_H
+#define PPM_CHECK_H
 
 #include <stdio.h>
-#define STEGO_H_FILE
 
 // Check that the file is P6 format
 int correct_magic_num(FILE *);

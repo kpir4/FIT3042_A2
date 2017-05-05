@@ -62,11 +62,12 @@ char *add_file_extension(char *inf_name, int curr_file) {
 	char extension[9];
 	if (curr_file < 10)
 		strcat(extension, "-00");
-	else if (10 < curr_file < 100)
+	else if (10 <= curr_file < 100)
 		strcat(extension, "-0");
-	else
+	else if (100 <= curr_file < 1000)
 		strcat(extension, "-");
-	strcat(extension, file_num);
+	if (curr_file != -1)
+		strcat(extension, file_num);
 	strcat(extension, ".ppm");
 	strcat(inf_name, extension);
 	return inf_name_cpy;

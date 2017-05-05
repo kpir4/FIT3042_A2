@@ -41,18 +41,18 @@ int main(int argc, char **argv) {
 				return 1;
 			}
 		}
-		else if (!strcmp(argv[1], "-s")) {
-			hide_msg(argv[2], argv[3], msg, msg_len, -1);
-			preview_img(argv[2]);
-			preview_img(argv[3]);
-		}
-		else if (!strcmp(argv[1], "-p")) {
-			hide_fork(argv[2]);
-		}
-		else {
-			printf("Error: The message can only be hidden in a maximum of 255 images.\nTerminating...\n");
-			return 1;
-		}
+	}
+	else if (!strcmp(argv[1], "-s")) {
+		hide_msg(argv[2], argv[3], msg, msg_len, -1);
+		preview_img(argv[2]);
+		preview_img(argv[3]);
+	}
+	else if (!strcmp(argv[1], "-p")) {
+		hide_fork(argv[2]);
+	}
+	else {
+		printf("Error: The message can only be hidden in a maximum of 255 images.\nTerminating...\n");
+		return 1;
 	}
 
 	return 0;
@@ -172,7 +172,8 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 		// create the corresponding image which will have the message hidden within
 		char *outf_name_copy = (char*)malloc(strlen(outf_name) + 10);
 		strcpy(outf_name_copy, outf_name);
-		strcpy(outf_name_copy, add_file_extension(outf_name_copy, curr_img));
+		if (num_files == -1) strcpy(outf_name_copy, add_file_extension(outf_name_copy, -1));
+		else strcpy(outf_name_copy, add_file_extension(outf_name_copy, curr_img));
 		FILE *outf = fopen(outf_name_copy, "w");
 		// copy image header to the output image
 		copy_header(inf, outf, count_header_lines(inf));

@@ -22,7 +22,8 @@ void preview_img(char *filename) {
 		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 	}
 	else {
-		char *preview_title = get_preview_title(filename);
+		char *preview_title = (char*)malloc(strlen(filename) + 20);
+		get_preview_title(filename, preview_title);
 		/* Create the window */
 		window = SDL_CreateWindow(preview_title,
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -50,9 +51,10 @@ void preview_img(char *filename) {
 	
 				/* Draw the pixel! */     
 				get_channel_info(inf, &red, &green, &blue);
-				*p=SDL_MapRGB(screenSurface->format, red, green, blue);            
+				*p=SDL_MapRGB(screenSurface->format, red, green, blue);
+				SDL_UpdateWindowSurface(window);          
 			}
-			SDL_UpdateWindowSurface(window);
+			
 
 			/* Wait two seconds */
 			SDL_Delay(10000); 
@@ -62,6 +64,7 @@ void preview_img(char *filename) {
 		SDL_DestroyWindow(window);
 		SDL_Quit();
 		fclose(inf);
+		free(preview_title);
 	}
 }
 
@@ -71,11 +74,8 @@ void get_channel_info(FILE *inf, int (*red), int (*green), int (*blue)) {
 	(*blue) = fgetc(inf);
 }
 
-char *get_preview_title(char *filename) {
-	char* preview_title = "Image Preview";
-	char* filename_cpy;
-	strcpy(filename_cpy, filename);
-	strcat(filename_cpy, ".ppm");
-	strcat(preview_title, filename_cpy);
-	return preview_title;
+void *get_preview_title(char *filename, char *preview_title) {
+	strcpy(preview_title, "Image Preview: ");
+	strcat(preview_title, filename);
+	strcat(preview_title, ".ppm");
 }

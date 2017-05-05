@@ -170,7 +170,10 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 		// find how many characters can be stored in the current image
 		unsigned int file_cap = get_file_cap(inf);
 		// create the corresponding image which will have the message hidden within
-		FILE *outf = open_file(outf_name, curr_img);
+		char *outf_name_copy = (char*)malloc(strlen(outf_name) + 10);
+		strcpy(outf_name_copy, outf_name);
+		strcpy(outf_name_copy, add_file_extension(outf_name_copy, curr_img));
+		FILE *outf = fopen(outf_name_copy, "w");
 		// copy image header to the output image
 		copy_header(inf, outf, count_header_lines(inf));
 		if (curr_img == 0){
@@ -185,8 +188,6 @@ int hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_fi
 		}
 		fclose(inf);
 		fclose(outf);
-		free(inf_name_copy);
-		free(outf_name_copy);
 		curr_img++;
 	} while (curr_img < num_files);
 	return 0;
@@ -250,8 +251,9 @@ void hide_bit(FILE *inf, FILE *outf, char *msg, int bit_shift, int msg_len, int 
 
 void hide_fork(char *file) {
 	FILE *inf = fopen(file, "r");
-	char *msg_file, *inf, *outf;
+	char *msg_file, *inf_img, *outf_img, *msg;
 	pid_t pid;
+	int more_to_hide = 1;
 	
 	while (more_to_hide) {
 		get_parametres(inf, &msg_file, &inf_img, &outf_img);
@@ -260,7 +262,6 @@ void hide_fork(char *file) {
 			printf("Error: Failed to create child process.\nTerminating...\n");
 		}
 		else if (!pid) {
-			char *msg;
 			strcpy(msg, get_msg_from_file(msg_file));
 			hide_msg(inf_img, outf_img, msg, strlen(msg) - 1, -1);
 			// stop child process from creating another child process
@@ -280,19 +281,24 @@ void get_parametres(FILE *inf, char **msg_file, char **inf_img, char **outf_img)
 	int max = 20;
 	char *temp_str = (char*)malloc(max);
 
-	while ((temp = fgetc(inf)) != "\n") {
+	while (temp = fgetc(inf) != '\n') {
 		temp_str[str_len] = temp;
-		if (temp == " " && i == 0) {
-			temp_str[str_len] = 0
-			strcpy(*msg_file, msg_file_copy);
-		}
-		else if (temp == " " && i == 1) {
-			temp_str[str_len] = 0
-			strcpy(*inf_img, inf_img_cpy);
-		}
-		else {
-			temp_str[str_len] = 0
-			strcopy(*outf_img, outf_img_cpy);
+		if (temp == ' ') {
+			if (i == 0){
+				temp_str[str_len] = 0;
+				strcpy(*msg_file, temp_str);
+				strcpy(temp_str, "");
+				i++;
+			}else if (i == 1) {
+				temp_str[str_len] = 0;
+				strcpy(*inf_img, temp_str);
+				strcpy(temp_str, "");
+				i++;
+			}
+			else {
+				temp_str[str_len] = 0;
+				strcpy(*outf_img, temp_str);
+			}
 		}
 		if (str_len == max - 1) {
 			max += max;
@@ -300,6 +306,7 @@ void get_parametres(FILE *inf, char **msg_file, char **inf_img, char **outf_img)
 		}
 		str_len++;
 	}
+	free(temp_str);
 }
 
 
@@ -313,7 +320,6 @@ char *get_msg_from_file(char *msg_file) {
 		int c = fgetc(inf);
 		if (c == EOF) {
 			message[msg_len] = 0;
-			return msg_len;
 		}
 		message[msg_len] = c;
 		// allocate more memory if user input is longer than max
@@ -327,7 +333,7 @@ char *get_msg_from_file(char *msg_file) {
 }
 
 
-int more_to_hide(FILE *inf) {
+int check_for_more(FILE *inf) {
 	char temp = fgetc(inf);
 	if (temp == EOF)
 		return 0;

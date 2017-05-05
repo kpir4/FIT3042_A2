@@ -4,7 +4,7 @@
 
 /* Setting up screen size*/
 
-void preview_image(char *filename) {
+void preview_img(char *filename) {
 	FILE *inf = open_file(filename, -1);
 	int width = get_width(inf);
 	int height = get_height(inf);
@@ -21,10 +21,8 @@ void preview_image(char *filename) {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 	}
-
-	char *preview_title = get_preview_title(filename);
-
 	else {
+		char *preview_title = get_preview_title(filename);
 		/* Create the window */
 		window = SDL_CreateWindow(preview_title,
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -51,7 +49,7 @@ void preview_image(char *filename) {
 				int *p = (int *)screenSurface->pixels + y * screenSurface->pitch + x * screenSurface->format->BytesPerPixel;            
 	
 				/* Draw the pixel! */     
-				get_channel_info(inf, red, green, blue);
+				get_channel_info(inf, &red, &green, &blue);
 				*p=SDL_MapRGB(screenSurface->format, red, green, blue);            
 			}
 			SDL_UpdateWindowSurface(window);

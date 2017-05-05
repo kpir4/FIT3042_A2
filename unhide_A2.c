@@ -5,23 +5,23 @@
 #include "ppm_check.h"
 
 int main(int argc, char **argv) {
-	if (argc < 3) {
+	if (argc < 2) {
 		printf("Error: program requires 1 parameters to run: input.ppm\n");
 		printf("Terminating...\n");
 		return 1;
 	}
 
 	if (!strcmp(argv[1], "-m")) {
-		unhide_msg(argv[2]);
+		unhide_msg(argv[2], 0);
 	}
 	else
-		unhide_msg(argv[2], -1);
+		unhide_msg(argv[1], -1);
 
 	return 0;
 }
 
 
-void unhide_msg(char *filename, int file_flag = 0) {
+void unhide_msg(char *filename, int file_flag) {
 	int curr_img = file_flag, curr_char_idx, i, j;
 	unsigned char unhidden_char = 0;
 

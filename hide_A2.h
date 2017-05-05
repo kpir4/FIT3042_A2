@@ -15,6 +15,6 @@ void encode_length(FILE *in, FILE *out, int length);
 void hide_fork(char *file);
 void get_parametres(FILE *inf, char **msg_file, char **inf_img, char **outf_img);
 char *get_msg_from_file(char *msg_file);
-int more_to_hide(FILE *inf);
+int check_for_more(FILE *inf);
 
 #endif

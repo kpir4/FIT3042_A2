@@ -5,6 +5,6 @@
 
 void unhide_char(FILE *inf, unsigned char(*unhidden_char));
 int get_msg_len(FILE* inf);
-void unhide_msg(char *filename);
+void unhide_msg(char *filename, int file_flag);
 
 #endif

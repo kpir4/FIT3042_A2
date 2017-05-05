@@ -60,11 +60,11 @@ char *add_file_extension(char *inf_name, int curr_file) {
 	char file_num[4];
 	sprintf(file_num, "%d", curr_file);
 	char extension[9];
-	if (curr_file < 10)
+	if (curr_file >= 0 && curr_file < 10)
 		strcat(extension, "-00");
-	else if (10 <= curr_file < 100)
+	else if (curr_file >= 10 && curr_file < 100)
 		strcat(extension, "-0");
-	else if (100 <= curr_file < 1000)
+	else if (curr_file >= 100 && curr_file < 1000)
 		strcat(extension, "-");
 	if (curr_file != -1)
 		strcat(extension, file_num);

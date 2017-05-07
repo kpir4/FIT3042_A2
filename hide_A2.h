@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-int get_total_cap(char ** files, int num_files);
+int get_total_cap(char * filename, int num_files);
 char * add_file_extension(char *inf_name, int curr_file);
 int get_file_cap(FILE *inf);
 int get_msg(char **message);

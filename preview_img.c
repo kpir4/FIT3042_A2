@@ -43,21 +43,19 @@ void preview_img(char *filename) {
 
 
           	/* Make p point to the place we want to draw the pixel */      
-			int i, red, green, blue;			
+			int i, red, green, blue, x, y, *p;			
 			for (i = 0; i < num_pixels; i++){
-				int x = i % width;
-				int y = i / width;
-				int *p = (int *)screenSurface->pixels + y * screenSurface->pitch + x * screenSurface->format->BytesPerPixel;            
+				x = i % width;
+				y = i / width;
+				p = (int *)screenSurface->pixels + y * width + x;            
 	
 				/* Draw the pixel! */     
 				get_channel_info(inf, &red, &green, &blue);
 				*p=SDL_MapRGB(screenSurface->format, red, green, blue);
-				SDL_UpdateWindowSurface(window);          
-			}
-			
-
-			/* Wait two seconds */
-			SDL_Delay(10000); 
+				SDL_UpdateWindowSurface(window); 
+			} 
+			/* Wait two seconds */  
+			SDL_Delay(10000);    
 		}
 
 		/* Destroy the window */

@@ -30,10 +30,7 @@ int main(int argc, char **argv) {
 			// if the message fits
 			}else if (msg_len * 8 <= total_image_cap) {
 				// hides the message with the images
-				if (hide_msg(argv[3], argv[4], msg, msg_len, num_files)) {
-					printf("Error: Maximum channel value is not 255.\nTerminating...\n");
-					return 1;
-				}
+				hide_msg(argv[3], argv[4], msg, msg_len, num_files);
 				free(msg);
 			}
 			else {

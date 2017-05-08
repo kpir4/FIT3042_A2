@@ -41,17 +41,17 @@ int main(int argc, char **argv) {
 	}
 	else if (!strcmp(argv[1], "-s")) {
 		hide_msg(argv[2], argv[3], msg, msg_len, -1);
-		pid_t pid = fork();
-		int i;
-		for (i = 2; i < 4; i++){
-			if (pid < 0) {
-			printf("Error: Failed to create child process.\nTerminating...\n");
-			}
-			else {
-			preview_img(argv[i]);
-			// stop child process from creating another child process
-			break;
-			}
+		for(int n = 2; n < 4; n++ ) {
+			switch( fork()) { 
+				case 0: /* child */
+					preview_img(argv[n], n-2);
+					exit( 0 );
+				case -1:
+					perror( "fork" );
+					exit( 1 );
+				default:  /* parent */
+					break;
+    		} 
 		}
 		wait(NULL);
 	}

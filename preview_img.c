@@ -4,7 +4,7 @@
 
 /* Setting up screen size*/
 
-void preview_img(char *filename) {
+void preview_img(char *filename, int file_flag) {
 	FILE *inf = open_file(filename, -1);
 	int width = get_width(inf);
 	int height = get_height(inf);
@@ -25,10 +25,10 @@ void preview_img(char *filename) {
 		char *preview_title = (char*)malloc(strlen(filename) + 20);
 		get_preview_title(filename, preview_title);
 		/* Create the window */
-		window = SDL_CreateWindow(preview_title,
-			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			width, height,
-			SDL_WINDOW_SHOWN);
+		if (file_flag == 0)
+			window = SDL_CreateWindow(preview_title, 200, 300, width, height, SDL_WINDOW_SHOWN);
+		else
+			window = SDL_CreateWindow(preview_title, 800, 300, width, height, SDL_WINDOW_SHOWN);
 
 		if (window == NULL) {
 			printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -56,7 +56,7 @@ void preview_img(char *filename) {
 			}
 			SDL_UpdateWindowSurface(window);  
 			/* Wait two seconds */  
-			SDL_Delay(2000);    
+			SDL_Delay(5000);    
 		}
 
 		/* Destroy the window */

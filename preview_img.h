@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-void preview_img(char *filename);
+void preview_img(char *filename, int file_flag);
 
 void get_channel_info(FILE *inf, int(*red), int(*green), int(*blue));
 

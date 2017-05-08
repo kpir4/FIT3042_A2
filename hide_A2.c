@@ -40,20 +40,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	else if (!strcmp(argv[1], "-s")) {
-		hide_msg(argv[2], argv[3], msg, msg_len, -1);
-		for(int n = 2; n < 4; n++ ) {
-			switch( fork()) { 
-				case 0: /* child */
-					preview_img(argv[n], n-2);
-					exit( 0 );
-				case -1:
-					perror( "fork" );
-					exit( 1 );
-				default:  /* parent */
-					break;
-    		} 
-		}
-		wait(NULL);
+		preview_output(argv, msg, msg_len);
 	}
 	else if (!strcmp(argv[1], "-p")) {
 		hide_fork(argv[2]);
@@ -414,4 +401,30 @@ int check_for_more(FILE *inf) {
 		ungetc(temp, inf);
 		return 1;
 	}
+}
+
+/* Hides a message in a single .ppm image and displays the
+ * input .ppm image and the .ppm image hiding the message to
+ * the screen.
+ *
+ * files: the command line inputs are passed in to retrieve
+ * 		  the input and output file names.
+ * msg: the message to be hidden.
+ * msg_len: the length of the message
+ */
+void preview_output(char **files, char *msg, int msg_len){
+	hide_msg(files[2], files[3], msg, msg_len, -1);
+	for(int n = 2; n < 4; n++ ) {
+		switch( fork()) { 
+			case 0: /* child */
+				preview_img(files[n], n-2);
+				exit( 0 );
+			case -1:
+				perror( "fork" );
+				exit( 1 );
+			default:  /* parent */
+				break;
+		} 
+	}
+	wait(NULL);
 }

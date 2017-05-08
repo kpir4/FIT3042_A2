@@ -56,7 +56,7 @@ void preview_img(char *filename, int file_flag) {
 			}
 			SDL_UpdateWindowSurface(window);  
 			/* Wait two seconds */  
-			SDL_Delay(5000);    
+			SDL_Delay(10000);    
 		}
 
 		/* Destroy the window */

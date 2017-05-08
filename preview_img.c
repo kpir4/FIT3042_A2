@@ -52,10 +52,11 @@ void preview_img(char *filename) {
 				/* Draw the pixel! */     
 				get_channel_info(inf, &red, &green, &blue);
 				*p=SDL_MapRGB(screenSurface->format, red, green, blue);
-				SDL_UpdateWindowSurface(window); 
-			} 
+				//SDL_UpdateWindowSurface(window); 
+			}
+			SDL_UpdateWindowSurface(window);  
 			/* Wait two seconds */  
-			SDL_Delay(10000);    
+			SDL_Delay(2000);    
 		}
 
 		/* Destroy the window */

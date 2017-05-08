@@ -41,8 +41,19 @@ int main(int argc, char **argv) {
 	}
 	else if (!strcmp(argv[1], "-s")) {
 		hide_msg(argv[2], argv[3], msg, msg_len, -1);
-		preview_img(argv[2]);
-		preview_img(argv[3]);
+		pid_t pid = fork();
+		int i;
+		for (i = 2; i < 4; i++){
+			if (pid < 0) {
+			printf("Error: Failed to create child process.\nTerminating...\n");
+			}
+			else {
+			preview_img(argv[i]);
+			// stop child process from creating another child process
+			break;
+			}
+		}
+		wait(NULL);
 	}
 	else if (!strcmp(argv[1], "-p")) {
 		hide_fork(argv[2]);

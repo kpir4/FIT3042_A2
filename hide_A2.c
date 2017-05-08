@@ -288,9 +288,8 @@ void hide_fork(char *file) {
 		get_parametres(inf, &msg_file, &inf_img, &outf_img);
 		msg = get_msg_from_file(msg_file);
 		hide_msg(inf_img, outf_img, msg, strlen(msg), -2);
-		/*switch(fork()) { 
+		switch(fork()) { 
 			case 0: // child
-				sleep(5000);
 				strcpy(msg, get_msg_from_file(msg_file));
 				hide_msg(inf_img, outf_img, msg, strlen(msg), -1);
 				exit(0);
@@ -299,7 +298,7 @@ void hide_fork(char *file) {
 				exit(1);
 			default:  // parent
 				break;
-		}*/
+		}
 		more_to_hide = check_for_more(inf);
 	}
 	wait(NULL);

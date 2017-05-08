@@ -14,40 +14,37 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	
-	char *msg;
-	int msg_len = get_msg(&msg);
+	if (!strcmp(argv[1], "-p")){
+		hide_fork(argv[2]);
+	}else{
+		char *msg;
+		int msg_len = get_msg(&msg);
 
-	// checks for the '-m' flag for hiding message in multiple images
-	if (!strcmp(argv[1], "-m")) {
-		int num_files = atoi(argv[2]);
-		if (num_files < 225) {
-			// finds the combined number of characters that can be hidden by all images
-			int total_image_cap = get_total_cap(argv[3], num_files);
-			
-			if (total_image_cap == -1) {
-				printf("Error: Image format must be P6.\nTerminating...\n");
-				return 1;
-			// if the message fits
-			}else if (msg_len * 8 <= total_image_cap) {
-				// hides the message with the images
-				hide_msg(argv[3], argv[4], msg, msg_len, num_files);
-				free(msg);
-			}
-			else {
-				printf("Error: Message is too large to hide in input image.\nTerminating...\n");
-				return 1;
+		// checks for the '-m' flag for hiding message in multiple images
+		if (!strcmp(argv[1], "-m")) {
+			int num_files = atoi(argv[2]);
+			if (num_files < 225) {
+				// finds the combined number of characters that can be hidden by all images
+				int total_image_cap = get_total_cap(argv[3], num_files);
+				
+				if (total_image_cap == -1) {
+					printf("Error: Image format must be P6.\nTerminating...\n");
+					return 1;
+				// if the message fits
+				}else if (msg_len * 8 <= total_image_cap) {
+					// hides the message with the images
+					hide_msg(argv[3], argv[4], msg, msg_len, num_files);
+					free(msg);
+				}
+				else {
+					printf("Error: Message is too large to hide in input image.\nTerminating...\n");
+					return 1;
+				}
 			}
 		}
-	}
-	else if (!strcmp(argv[1], "-s")) {
-		preview_output(argv, msg, msg_len);
-	}
-	else if (!strcmp(argv[1], "-p")) {
-		hide_fork(argv[2]);
-	}
-	else {
-		printf("Error: The message can only be hidden in a maximum of 255 images.\nTerminating...\n");
-		return 1;
+		else if (!strcmp(argv[1], "-s")) {
+			preview_output(argv, msg, msg_len);
+		}
 	}
 
 	return 0;
@@ -176,18 +173,16 @@ int count_header_lines(FILE *inf) {
 void hide_msg(char *inf_name, char *outf_name, char *msg, int msg_len, int num_files) {
 	int i, curr_img = 0, bits_iter = 0;
 	char curr_char;
+	FILE *inf, *outf;
 	do {
 		// get the current image that will hide the current portion of the message
-		FILE *inf = open_file(inf_name, curr_img);
+		if(num_files < 0) {inf = open_file(inf_name, num_files);}
+		else {inf = open_file(inf_name, curr_img);}
 		// find how many characters can be stored in the current image
 		unsigned int file_cap = get_file_cap(inf);
 		// create the corresponding image which will have the message hidden within
-		char *outf_name_copy = (char*)malloc(strlen(outf_name) + 10);
-		strcpy(outf_name_copy, outf_name);
-		if (num_files == -1) strcpy(outf_name_copy, add_file_extension(outf_name_copy, -1));
-		else strcpy(outf_name_copy, add_file_extension(outf_name_copy, curr_img));
-		FILE *outf = fopen(outf_name_copy, "w");
-		// copy image header to the output image
+		if(num_files < 0) {outf = create_out_file(outf_name, num_files);}
+		else {outf = create_out_file(outf_name, curr_img);}
 		copy_header(inf, outf, count_header_lines(inf));
 		if (curr_img == 0){
 			encode_length(inf, outf, msg_len);
@@ -287,21 +282,24 @@ void hide_bit(FILE *inf, FILE *outf, char *msg, int bit_shift, int msg_len, int 
 void hide_fork(char *file) {
 	FILE *inf = fopen(file, "r");
 	char *msg_file, *inf_img, *outf_img, *msg;
-	pid_t pid;
 	int more_to_hide = 1;
 	
 	while (more_to_hide) {
 		get_parametres(inf, &msg_file, &inf_img, &outf_img);
-		pid = fork();
-		if (pid < 0) {
-			printf("Error: Failed to create child process.\nTerminating...\n");
-		}
-		else if (!pid) {
-			strcpy(msg, get_msg_from_file(msg_file));
-			hide_msg(inf_img, outf_img, msg, strlen(msg) - 1, -1);
-			// stop child process from creating another child process
-			break;
-		}
+		msg = get_msg_from_file(msg_file);
+		hide_msg(inf_img, outf_img, msg, strlen(msg), -2);
+		/*switch(fork()) { 
+			case 0: // child
+				sleep(5000);
+				strcpy(msg, get_msg_from_file(msg_file));
+				hide_msg(inf_img, outf_img, msg, strlen(msg), -1);
+				exit(0);
+			case -1:
+				perror("Error: Failed to create child process.\nTerminating...\n");
+				exit(1);
+			default:  // parent
+				break;
+		}*/
 		more_to_hide = check_for_more(inf);
 	}
 	wait(NULL);
@@ -325,35 +323,35 @@ void get_parametres(FILE *inf, char **msg_file, char **inf_img, char **outf_img)
 	int max = 20;
 	char *temp_str = (char*)malloc(max);
 
-	while (temp = fgetc(inf) != '\n') {
-		temp_str[str_len] = temp;
+	while ((temp = fgetc(inf)) != '\n') {
 		if (temp == ' ') {
+			temp_str[str_len] = 0;
 			if (i == 0){
-				temp_str[str_len] = 0;
+				(*msg_file) = (char*)malloc(max);
 				strcpy(*msg_file, temp_str);
-				strcpy(temp_str, "");
-				i++;
 			}else if (i == 1) {
-				temp_str[str_len] = 0;
+				(*inf_img) = (char*)malloc(max);
 				strcpy(*inf_img, temp_str);
-				strcpy(temp_str, "");
-				i++;
 			}
 			else if (i == 2) {
-				temp_str[str_len] = 0;
+				(*outf_img) = (char*)malloc(max);
 				strcpy(*outf_img, temp_str);
-				i++;
 			}
 			else {
 				printf("Error: File is in the wrong format. Only 3 entries permitted for each line.\nTerminating...\n");
 				exit(1);
 			}
+			memset(temp_str,0,strlen(temp_str));
+			str_len = 0;
+			i++;
+		}else {
+			temp_str[str_len] = temp;
+			str_len++;
 		}
 		if (str_len == max - 1) {
 			max += max;
 			temp_str = (char*)realloc(temp_str, max);
 		}
-		str_len++;
 	}
 	free(temp_str);
 }
@@ -366,15 +364,11 @@ void get_parametres(FILE *inf, char **msg_file, char **inf_img, char **outf_img)
  */
 char *get_msg_from_file(char *msg_file) {
 	FILE *inf = fopen(msg_file, "r");
-	int max = 20;
+	int max = 20, c;
 	char *message = (char*)malloc(max);
 
 	int msg_len = 0;
-	while (1) {
-		int c = fgetc(inf);
-		if (c == EOF) {
-			message[msg_len] = 0;
-		}
+	while ((c = fgetc(inf)) != EOF) {
 		message[msg_len] = c;
 		// allocate more memory if user input is longer than max
 		if (msg_len == max - 1) {
@@ -383,6 +377,8 @@ char *get_msg_from_file(char *msg_file) {
 		}
 		msg_len++;
 	}
+	message[msg_len] = 0;
+	fclose(inf);
 	return message;
 }
 
@@ -418,10 +414,10 @@ void preview_output(char **files, char *msg, int msg_len){
 		switch( fork()) { 
 			case 0: /* child */
 				preview_img(files[n], n-2);
-				exit( 0 );
+				exit(0);
 			case -1:
-				perror( "fork" );
-				exit( 1 );
+				perror("Error: Failed to create child process.\nTerminating...\n");
+				exit(1);
 			default:  /* parent */
 				break;
 		} 

@@ -74,16 +74,33 @@ char *add_file_extension(char *inf_name, int curr_file) {
 }
 
 FILE *open_file(char *filename, int curr_img){
-	char *inf_name_copy = (char*)malloc(strlen(filename) + 10);
-	strcpy(inf_name_copy, filename);
-	strcpy(inf_name_copy, add_file_extension(inf_name_copy, curr_img));
-	FILE *inf = fopen(inf_name_copy, "r");
+	FILE *inf;
+	char *inf_name_copy;
+	if (curr_img != -2){
+		inf_name_copy = (char*)malloc(strlen(filename) + 10);
+		strcpy(inf_name_copy, filename);
+		strcpy(inf_name_copy, add_file_extension(inf_name_copy, curr_img));
+		inf = fopen(inf_name_copy, "r");
+	}else {inf = fopen(filename, "r");}
 	// check the image has the correct maximum channel value
 	if (!correct_magic_num(inf))
 		exit(-1);
 	// ignore comments in the ppm image file
 	ignore_comments(inf);
 	return inf;
+}
+
+FILE *create_out_file(char *filename, int curr_img){
+	FILE *outf;
+	char *outf_name_copy;
+	if (curr_img != -2){
+		outf_name_copy = (char*)malloc(strlen(filename) + 10);
+		strcpy(outf_name_copy, filename);
+		strcpy(outf_name_copy, add_file_extension(outf_name_copy, curr_img));
+		outf = fopen(outf_name_copy, "w");
+	}else{ outf = fopen(filename, "w");}
+	// copy image header to the output image
+	return outf;
 }
 
 // Returns the number of characters that can be hidden within the file

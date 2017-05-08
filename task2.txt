@@ -1,0 +1,3 @@
+msg1.txt tester-000.ppm out1.ppm 
+msg2.txt tester-001.ppm out2.ppm 
+msg3.txt tester-002.ppm out3.ppm 

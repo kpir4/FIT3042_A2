@@ -22,6 +22,8 @@ char *add_file_extension(char *inf_name, int curr_file);
 
 FILE *open_file(char *filename, int curr_img);
 
+FILE *create_out_file(char *filename, int curr_img);
+
 int get_file_cap(FILE *inf);
 
 #endif
